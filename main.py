@@ -14,8 +14,19 @@ from typing import Iterable, Any
 import numpy as np
 
 
+def day2(filename: str):
+    def safe(nrs: list[int]) -> bool:
+        return all(0 < a - b < 4 for a, b in zip(nrs[1:], nrs)) or all(0 < b - a < 4 for a, b in zip(nrs[1:], nrs))
+
+    numbers = [list(map(int, line.split(" "))) for line in open(filename).readlines()]
+
+    part1 = sum(map(safe, numbers))
+    part2 = sum(any(safe(nrs[:i] + nrs[i+1:]) for i in range(len(nrs))) for nrs in numbers)
+
+    return part1, part2
+
 def day1(filename: str):
-    numbers = [map(int, line.strip().split("  ")) for line in open(filename).readlines()]
+    numbers = [map(int, line.split("  ")) for line in open(filename).readlines()]
     left, right = zip(*numbers)
     ls, rs = sorted(left), sorted(right)
 
