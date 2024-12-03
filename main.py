@@ -14,6 +14,20 @@ from typing import Iterable, Any
 import numpy as np
 
 
+def day3(filename: str):
+    muls = (int(m.group(1)) * int(m.group(2)) for m in re.finditer(r"mul\((\d+),(\d+)\)", open(filename).read()))
+    instrs = [m.groups() for m in re.finditer(r"(mul\((\d+),(\d+)\))|do(n't)?\(\)", open(filename).read())]
+    def folder(state, tup):
+        s, accepting = state
+        mul, a, b, dont = tup
+        return (s, dont is None) if mul is None else (s + int(a) * int(b), True) if accepting else state
+
+
+    part1 = sum(muls)
+    part2, _ = reduce(folder, instrs, (0, True))
+
+    return part1, part2
+
 def day2(filename: str):
     def safe(nrs: list[int]) -> bool:
         return all(0 < a - b < 4 for a, b in zip(nrs[1:], nrs)) or all(0 < b - a < 4 for a, b in zip(nrs[1:], nrs))
