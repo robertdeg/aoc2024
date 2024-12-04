@@ -18,7 +18,7 @@ def day4(filename: str):
     def get(haystack: dict, pos, delta, n) -> str:
         return "".join(haystack.get((pos[0] + i * delta[0], pos[1] + i * delta[1]), '') for i in range(n))
 
-    chars = {(row, col) : ch for row, line in enumerate(open(filename).readlines()) for col, ch in enumerate(line)}
+    chars = {(r, c) : ch for r, line in enumerate(open(filename).readlines()) for c, ch in enumerate(line)}
     dirs = [(-1, -1), (-1, 1), (1, 1), (1, -1), (-1, 0), (0, 1), (1, 0), (0, -1)]
 
     part1 = sum(get(chars, pos, delta, 4) == "XMAS" for pos in chars for delta in dirs)
