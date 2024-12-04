@@ -19,10 +19,10 @@ def day4(filename: str):
         return "".join(haystack.get((pos[0] + i * delta[0], pos[1] + i * delta[1]), '') for i in range(n))
 
     chars = {(row, col) : ch for row, line in enumerate(open(filename).readlines()) for col, ch in enumerate(line)}
-    diags = [(-1, -1), (-1, 1), (1, 1), (1, -1), (-1, 0), (0, 1), (1, 0), (0, -1)]
+    dirs = [(-1, -1), (-1, 1), (1, 1), (1, -1), (-1, 0), (0, 1), (1, 0), (0, -1)]
 
-    part1 = sum(get(chars, pos, delta, 4) == "XMAS" for pos in chars for delta in diags)
-    part2 = sum(not {get(chars, (p[0] - d[0], p[1] - d[1]), d, 3) for d in ((1, 1), (1, -1))} - {"SAM", "MAS"}
+    part1 = sum(get(chars, pos, delta, 4) == "XMAS" for pos in chars for delta in dirs)
+    part2 = sum({get(chars, (p[0] - d[0], p[1] - d[1]), d, 3) for d in ((1, 1), (1, -1))} <= {"SAM", "MAS"}
                 for p in chars)
 
     return part1, part2
