@@ -14,6 +14,19 @@ from typing import Iterable, Any
 import numpy as np
 
 
+def day4(filename: str):
+    def get(haystack: dict, pos, delta, n) -> str:
+        return "".join(haystack.get(tuple(pos + i * delta), '') for i in range(n))
+
+    chars = {(row, col) : ch for row, line in enumerate(open(filename).readlines()) for col, ch in enumerate(line)}
+    diags = list(map(np.array, [(-1, -1), (-1, 1), (1, 1), (1, -1)]))
+    hvs = list(map(np.array, [(-1, 0), (0, 1), (1, 0), (0, -1)]))
+
+    part1 = sum(get(chars, pos, delta, 4) == "XMAS" for pos in chars for delta in diags + hvs)
+    part2 = sum(not {get(chars, np.array(pos) - delta, delta, 3) for delta in diags} - {"SAM", "MAS"} for pos in chars)
+
+    return part1, part2
+
 def day3(filename: str):
     muls = (map(int, m.groups()) for m in re.finditer(r"mul\((\d+),(\d+)\)", open(filename).read()))
     instrs = [m.groups() for m in re.finditer(r"mul\((\d+),(\d+)\)|do(n't)?\(\)", open(filename).read())]
