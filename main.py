@@ -16,14 +16,14 @@ import numpy as np
 
 def day4(filename: str):
     def get(haystack: dict, pos, delta, n) -> str:
-        return "".join(haystack.get(tuple(pos + i * delta), '') for i in range(n))
+        return "".join(haystack.get((pos[0] + i * delta[0], pos[1] + i * delta[1]), '') for i in range(n))
 
     chars = {(row, col) : ch for row, line in enumerate(open(filename).readlines()) for col, ch in enumerate(line)}
-    diags = list(map(np.array, [(-1, -1), (-1, 1), (1, 1), (1, -1)]))
-    hvs = list(map(np.array, [(-1, 0), (0, 1), (1, 0), (0, -1)]))
+    diags = [(-1, -1), (-1, 1), (1, 1), (1, -1), (-1, 0), (0, 1), (1, 0), (0, -1)]
 
-    part1 = sum(get(chars, pos, delta, 4) == "XMAS" for pos in chars for delta in diags + hvs)
-    part2 = sum(not {get(chars, np.array(pos) - delta, delta, 3) for delta in diags} - {"SAM", "MAS"} for pos in chars)
+    part1 = sum(get(chars, pos, delta, 4) == "XMAS" for pos in chars for delta in diags)
+    part2 = sum(not {get(chars, (p[0] - d[0], p[1] - d[1]), d, 3) for d in ((1, 1), (1, -1))} - {"SAM", "MAS"}
+                for p in chars)
 
     return part1, part2
 
