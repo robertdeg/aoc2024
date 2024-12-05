@@ -24,18 +24,18 @@ def day5(filename: str):
     def correct(seq: list[int]) -> bool:
         return not any(a in out[b] for a, b in combinations(seq, 2))
 
-    def dfs(edges: dict, vertices: set, source: int, visited: set = set()) -> Iterable[int]:
+    def dfs(vertices: set, source: int, visited: set = set()) -> Iterable[int]:
         visited.add(source)
-        for v in (edges[source] & vertices):
-            yield from dfs(edges, vertices, v, visited) if v not in visited else ()
+        for v in (out[source] & vertices):
+            yield from dfs(vertices, v, visited) if v not in visited else ()
         yield source
 
-    def postorder(edges: dict, vertices: set) -> Iterable[int]:
+    def postorder(vertices: set) -> Iterable[int]:
         visited = set()
-        yield from chain.from_iterable(dfs(edges, vertices, v, visited) for v in vertices if v not in visited)
+        yield from chain.from_iterable(dfs(vertices, v, visited) for v in vertices if v not in visited)
 
     part1 = sum(ys[len(ys) // 2] for ys in paths if correct(ys))
-    part2 = sum(next(islice(postorder(out, set(ys)), len(ys) // 2, None)) for ys in paths if not correct(ys))
+    part2 = sum(next(islice(postorder(set(ys)), len(ys) // 2, None)) for ys in paths if not correct(ys))
 
     return part1, part2
 
