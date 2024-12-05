@@ -7,12 +7,37 @@ import operator
 from itertools import zip_longest, starmap, count, chain, islice, takewhile, accumulate, tee, dropwhile, repeat, \
     combinations, permutations, cycle
 from functools import reduce, partial, cmp_to_key
-from collections import Counter
+from collections import Counter, defaultdict
 import re
 from typing import Iterable, Any
 
 import numpy as np
 
+
+def day5(filename: str):
+    p1, p2 = map(str.splitlines, open(filename).read().split("\n\n"))
+    paths = [eval(f"[{line}]") for line in p2]
+    out = defaultdict(set)
+    for a, b in (tuple(map(int, line.split("|"))) for line in p1):
+        out[a].add(b)
+
+    def correct(seq: list[int]) -> bool:
+        return not any(a in out[b] for a, b in combinations(seq, 2))
+
+    def dfs(edges: dict, vertices: set, source: int, visited: set = set()) -> Iterable[int]:
+        visited.add(source)
+        for v in (edges[source] & vertices):
+            yield from dfs(edges, vertices, v, visited) if v not in visited else ()
+        yield source
+
+    def postorder(edges: dict, vertices: set) -> Iterable[int]:
+        visited = set()
+        yield from chain.from_iterable(dfs(edges, vertices, v, visited) for v in vertices if v not in visited)
+
+    part1 = sum(ys[len(ys) // 2] for ys in paths if correct(ys))
+    part2 = sum(next(islice(postorder(out, set(ys)), len(ys) // 2, None)) for ys in paths if not correct(ys))
+
+    return part1, part2
 
 def day4(filename: str):
     def get(haystack: dict, pos, delta, n) -> str:
