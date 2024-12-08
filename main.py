@@ -13,6 +13,91 @@ from typing import Iterable, Any
 
 import numpy as np
 
+def day8(filename: str):
+    world = {(r, c) : ch for r, line in enumerate(open(filename)) for c, ch in enumerate(line.strip())}
+    ants = defaultdict(set)
+    for pos, ch in world.items():
+        if ch != '.':
+            ants[ch].add(pos)
+
+    def expand(r1, c1, r2, c2, s=0):
+        return takewhile(world.__contains__, ((r2 + k * (r2 - r1), c2 + k * (c2 - c1)) for k in count(s)))
+
+    locs1 = {next(expand(*p1, *p2, 1), None) for _, ps in ants.items() for p1, p2 in permutations(ps, 2)}
+    locs2 = reduce(set.union, (set(expand(*p1, *p2)) for _, ps in ants.items() for p1, p2 in permutations(ps, 2)))
+
+    part1 = len(locs1 - {None})
+    part2 = len(locs2)
+
+    return part1, part2
+
+def day7(filename: str):
+    def strip_last(a: int, b: int) -> int:
+        return int(str(a)[:-len(str(b))])
+
+    def check(total: int, numbers: [int], advanced: bool) -> bool:
+        if total < 0:
+            return False
+        elif not numbers:
+            return total == 0
+        if total % numbers[-1] == 0:
+            if check(total // numbers[-1], numbers[:-1], advanced):
+                return True
+        if check(total - numbers[-1], numbers[:-1], advanced):
+            return True
+        if advanced and str(total).endswith(str(numbers[-1])):
+            return check(strip_last(total, numbers[-1]), numbers[:-1], advanced)
+        else:
+            return False
+
+
+    xss = [list(map(int, re.findall(r"\d+", line))) for line in open(filename).readlines()]
+    part1 = sum(tot for tot, *nrs in xss if check(tot, nrs, False))
+    part2 = sum(tot for tot, *nrs in xss if check(tot, nrs, True))
+
+    return part1, part2
+
+def day6(filename: str):
+    world = {(r, c) : ch for r, line in enumerate(open(filename)) for c, ch in enumerate(line.strip())}
+    guard = next(pos for pos in world if world[pos] == '^')
+
+    def forward(r, c, dr, dc) -> (int, int):
+        return r + dr, c + dc
+
+    def move(r, c, dr, dc) -> (int, int, int, int):
+        r1, c1 = forward(r, c, dr, dc)
+        return (r, c, dc, -dr) if world.get((r1, c1), '') == '#' else (r1, c1, dr, dc)
+
+    def trail(r: int, c: int, dr, dc):
+        path = set()
+        while (r, c, dr, dc) not in path:
+            yield r, c, dr, dc
+            path.add((r, c, dr, dc))
+            r, c, dr, dc = move(r, c, dr, dc)
+
+    route = list(takewhile(lambda p: (p[0], p[1]) in world, trail(*guard, -1, 0)))
+    visited = {pos : t for pos, t in zip(route, count())}
+
+    part2 = 0
+    path = set()
+    for (r, c, dr, dc), t in zip(route, count()):
+        rblock, cblock, *_ = forward(r, c, dr, dc)
+        if (rblock, cblock) not in path and world.get((rblock, cblock), '') == '.':
+            world[(rblock, cblock)] = '#'
+            for p in trail(r, c, dc, -dr):
+                if (p[0], p[1]) not in world:
+                    break
+                elif visited.get(p, 100000000) < t:
+                    part2 += 1
+                    break
+            else:
+                part2 += 1    # got stuck in a loop
+            world[(rblock, cblock)] = '.'
+        path.add((r, c))
+
+    part1 = len(path)
+
+    return part1, part2
 
 def day5(filename: str):
     p1, p2 = map(str.splitlines, open(filename).read().split("\n\n"))
