@@ -81,9 +81,9 @@ def day6(filename: str):
     part2 = 0
     path = set()
     for (r, c, dr, dc), t in zip(route, count()):
-        rblock, cblock, *_ = forward(r, c, dr, dc)
-        if (rblock, cblock) not in path and world.get((rblock, cblock), '') == '.':
-            world[(rblock, cblock)] = '#'
+        block = forward(r, c, dr, dc)
+        if block not in path and world.get(block, '') == '.':
+            world[block] = '#'
             for p in trail(r, c, dc, -dr):
                 if (p[0], p[1]) not in world:
                     break
@@ -92,7 +92,7 @@ def day6(filename: str):
                     break
             else:
                 part2 += 1    # got stuck in a loop
-            world[(rblock, cblock)] = '.'
+            world[block] = '.'
         path.add((r, c))
 
     part1 = len(path)
