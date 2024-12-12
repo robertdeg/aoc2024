@@ -1,17 +1,126 @@
 import functools
+import heapq
 import itertools
 import time
 from math import sqrt, floor, ceil, lcm
 import collections
 import operator
 from itertools import zip_longest, starmap, count, chain, islice, takewhile, accumulate, tee, dropwhile, repeat, \
-    combinations, permutations, cycle
-from functools import reduce, partial, cmp_to_key
+    combinations, permutations, cycle, filterfalse, pairwise
+from functools import reduce, partial, cmp_to_key, cache
 from collections import Counter, defaultdict
 import re
 from typing import Iterable, Any
 
 import numpy as np
+
+def day12(filename: str):
+    world = {(int(r), int(c)) : ch for r, line in enumerate(open(filename)) for c, ch in enumerate(line.strip())}
+    def neighbours(r, c):
+        yield from ((r - 1, c, 'N'), (r, c + 1, 'E'), (r + 1, c, 'S'), (r, c - 1, 'W'))
+
+    def region(r, c, visited):
+        visited.add((r, c))
+        area, perimeter = 1, set()
+        for nr, nc, nd in neighbours(r, c):
+            if world.get((nr, nc), None) != world[r, c]:
+                perimeter.add((nr, nc, nd))
+            if (nr, nc) not in visited and world.get((nr, nc), None) == world[r, c]:
+                a, p = region(nr, nc, visited)
+                area += a
+                perimeter.update(p)
+        return area, perimeter
+
+    def sides(edges: set, direction: str):
+        horz = direction not in "NS"
+        xs = sorted(filter(lambda e: e[2] == direction, edges), key=lambda e: (e[horz], e[not horz]))
+        return 1 + sum(b[horz] != a[horz] or abs(b[not horz] - a[not horz]) != 1 for a, b in pairwise(xs))
+
+    visited = set()
+    info = {pos : region(*pos, visited) for pos in world if pos not in visited}
+
+    part1 = sum(info[pos][0] * len(info[pos][1]) for pos in info)
+    part2 = sum(info[pos][0] * sides(info[pos][1], d) for pos, d in itertools.product(info, "NSEW"))
+    return part1, part2
+
+def day11(filename: str):
+    nrs = list(map(int, re.findall(r"\d+", open(filename).read())))
+
+    def spliteven(nr: str) -> (int, int):
+        l = len(nr) // 2
+        return int(nr[:l]), int(nr[l:])
+
+    @cache
+    def howmany(nr: int, blinks: int):
+        if blinks == 0:
+            return 1
+        if nr == 0:
+            return howmany(1, blinks - 1)
+        if len(str(nr)) % 2 == 0:
+            return sum(howmany(a, blinks - 1) for a in spliteven(str(nr)))
+        return howmany(nr * 2024, blinks - 1)
+
+    part1 = sum(howmany(nr, 25) for nr in nrs)
+    part2 = sum(howmany(nr, 75) for nr in nrs)
+
+    return part1, part2
+
+def day10(filename: str):
+    world = {(r, c) : int(ch) for r, line in enumerate(open(filename)) for c, ch in enumerate(line.strip())}
+
+    def nbors(r, c):
+        yield from ((r, c + 1), (r + 1, c), (r, c - 1), (r - 1, c))
+
+    def paths(p: (int, int), seen, all):
+        if not all and p in seen:
+            return 0
+        seen.add(p)
+        return 1 if world[p] == 9 else sum(paths(n, seen, all) for n in nbors(*p)
+                                           if (all or n not in seen) and world.get(n, 0) == world[p] + 1)
+
+    part1 = sum(paths(pos, set(), False) for pos in world if world[pos] == 0)
+    part2 = sum(paths(pos, set(), True) for pos in world if world[pos] == 0)
+
+    return part1, part2
+
+def day9(filename: str):
+    line = [int(d) for d in open(filename).read().strip()]
+    disk = [((i // 2 if i % 2 == 0 else None), n) for i, n in enumerate(line)]
+    pos = 0
+    space = list()
+    files = dict()
+    for id, size in disk:
+        if id is None:
+            space.append((pos, size))
+        else:
+            files[pos] = (size, id)
+        pos += size
+
+    def move_left(space, filepos, filesize, file_id) -> (int, int, int):
+        write_idx = 0
+        writepos, free = space[write_idx]
+        while writepos < filepos:
+            if filesize <= free:
+                space[write_idx] = writepos + filesize, free - filesize
+                if free == filesize:   # space is filled
+                    del space[write_idx]
+                return writepos, filesize, file_id
+            else:
+                write_idx += 1
+                writepos, free = space[write_idx]
+        return filepos, filesize, file_id
+
+    def move_files(space, files):
+        positions = sorted(files, reverse=True)
+        return [move_left(space, pos, *files[pos]) for pos in positions]
+
+    def checksum(pos, size, id):
+        return id * (2 * pos + size - 1) * size // 2
+
+    part1 = 0
+    part2 = sum(checksum(*file) for file in move_files(space, files))
+
+    return part1, part2
 
 def day8(filename: str):
     world = {(r, c) : ch for r, line in enumerate(open(filename)) for c, ch in enumerate(line.strip())}
@@ -78,10 +187,13 @@ def day6(filename: str):
     route = list(takewhile(lambda p: (p[0], p[1]) in world, trail(*guard, -1, 0)))
     visited = {pos : t for pos, t in zip(route, count())}
 
+    # TODO: keep track of all times a certain position was traversed
+
     part2 = 0
     path = set()
     for (r, c, dr, dc), t in zip(route, count()):
         block = forward(r, c, dr, dc)
+        # TODO: was the block traversed before time t?
         if block not in path and world.get(block, '') == '.':
             world[block] = '#'
             for p in trail(r, c, dc, -dr):
@@ -90,6 +202,9 @@ def day6(filename: str):
                 elif visited.get(p, 100000000) < t:
                     part2 += 1
                     break
+                # TODO: if the point is visited later on the route, it will not lead to a loop unless
+                #       the point can't be reached because it is blocked by the block
+                #       so break if
             else:
                 part2 += 1    # got stuck in a loop
             world[block] = '.'
