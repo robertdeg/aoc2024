@@ -2,6 +2,7 @@ import functools
 import heapq
 import itertools
 import time
+from hashlib import file_digest
 from math import sqrt, floor, ceil, lcm
 import collections
 import operator
@@ -86,15 +87,28 @@ def day10(filename: str):
 def day9(filename: str):
     line = [int(d) for d in open(filename).read().strip()]
     disk = [((i // 2 if i % 2 == 0 else None), n) for i, n in enumerate(line)]
-    pos = 0
-    space = list()
-    files = dict()
-    for id, size in disk:
-        if id is None:
-            space.append((pos, size))
-        else:
-            files[pos] = (size, id)
-        pos += size
+    poss = list(accumulate((n for _, n in disk), lambda a, b: a + b, initial=0))
+    space = [(pos, size) for pos, (id, size) in zip(poss, disk) if id is None]
+    files = {pos : (size, id) for pos, (id, size) in zip(poss, disk) if id is not None}
+
+    def compress(space, files):
+        result = dict()
+        reads = ((pos, *files[pos]) for pos in reversed(files))
+        writer = iter(space)
+        writepos, free = next(writer)
+        read_pos, size, fid = next(reads)
+        while writepos < read_pos + size:
+            moved = min(free, size)
+            result[writepos] = (moved, fid)
+            writepos += moved
+            free, size = free - moved, size - moved
+            if free == 0:
+                writepos, free = next(writer)
+            if size == 0:
+                read_pos, size, fid = next(reads)
+        result[read_pos] = size, fid
+        result.update({read_pos : (size, fid) for read_pos, size, fid in reads})
+        return {(pos, *result[pos]) for pos in result}
 
     def move_left(space, filepos, filesize, file_id) -> (int, int, int):
         write_idx = 0
@@ -117,7 +131,7 @@ def day9(filename: str):
     def checksum(pos, size, id):
         return id * (2 * pos + size - 1) * size // 2
 
-    part1 = 0
+    part1 = sum(checksum(*file) for file in compress(space, files))
     part2 = sum(checksum(*file) for file in move_files(space, files))
 
     return part1, part2
