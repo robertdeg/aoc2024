@@ -32,15 +32,15 @@ def extended_gcd(a, b):
 def day13(filename: str):
     data = [[int(nr) for nr in re.findall(r"\d+", block)] for block in open(filename).read().split("\n\n")]
 
-    def cheapest(x1, x2, x, y1, y2, y):
-        gcd, m, n = extended_gcd(x1, x2)
+    def costs(x1, x2, x, y1, y2, y):
+        gcd, m, n = extended_gcd(x1, x2)    # find m, n, gcd so that x1 * m + x2 * n == gcd
         mul = x // gcd
         a0, b0 = mul * m, mul * n
         r = Fraction(y - a0 * y1 - b0 * y2, x2 // gcd * y1 - x1 // gcd * y2)
         return 3 * (a0 + r.numerator * x2 // gcd) + b0 - r.numerator * x1 // gcd if r.denominator == 1 else 0
 
-    part1 = sum(cheapest(dx1, dx2, x, dy1, dy2, y) for dx1, dy1, dx2, dy2, x, y in data)
-    part2 = sum(cheapest(dx1, dx2, x + 10000000000000, dy1, dy2, y + 10000000000000) for dx1, dy1, dx2, dy2, x, y in data)
+    part1 = sum(costs(dx1, dx2, x, dy1, dy2, y) for dx1, dy1, dx2, dy2, x, y in data)
+    part2 = sum(costs(dx1, dx2, x + 10000000000000, dy1, dy2, y + 10000000000000) for dx1, dy1, dx2, dy2, x, y in data)
 
     return part1, part2
 
