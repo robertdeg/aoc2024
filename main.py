@@ -18,15 +18,12 @@ from typing import Iterable, Any
 import numpy as np
 
 
-def gcdExtended(a, b):
-    # Base Case
+def extended_gcd(a, b):
     if a == 0:
         return b, 0, 1
 
-    gcd, x1, y1 = gcdExtended(b % a, a)
+    gcd, x1, y1 = extended_gcd(b % a, a)
 
-    # Update x and y using results of recursive
-    # call
     x = y1 - (b // a) * x1
     y = x1
 
@@ -36,7 +33,7 @@ def day13(filename: str):
     data = [[int(nr) for nr in re.findall(r"\d+", block)] for block in open(filename).read().split("\n\n")]
 
     def cheapest(x1, x2, x, y1, y2, y):
-        gcd, m, n = gcdExtended(x1, x2)
+        gcd, m, n = extended_gcd(x1, x2)
         mul = x // gcd
         a0, b0 = mul * m, mul * n
         r = Fraction(y - a0 * y1 - b0 * y2, x2 // gcd * y1 - x1 // gcd * y2)
