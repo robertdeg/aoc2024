@@ -2,6 +2,7 @@ import functools
 import heapq
 import itertools
 import time
+from fractions import Fraction
 from hashlib import file_digest
 from math import sqrt, floor, ceil, lcm
 import collections
@@ -11,9 +12,40 @@ from itertools import zip_longest, starmap, count, chain, islice, takewhile, acc
 from functools import reduce, partial, cmp_to_key, cache
 from collections import Counter, defaultdict
 import re
+from numbers import Rational
 from typing import Iterable, Any
 
 import numpy as np
+
+
+def gcdExtended(a, b):
+    # Base Case
+    if a == 0:
+        return b, 0, 1
+
+    gcd, x1, y1 = gcdExtended(b % a, a)
+
+    # Update x and y using results of recursive
+    # call
+    x = y1 - (b // a) * x1
+    y = x1
+
+    return gcd, x, y
+
+def day13(filename: str):
+    data = [[int(nr) for nr in re.findall(r"\d+", block)] for block in open(filename).read().split("\n\n")]
+
+    def cheapest(x1, x2, x, y1, y2, y):
+        gcd, m, n = gcdExtended(x1, x2)
+        mul = x // gcd
+        a0, b0 = mul * m, mul * n
+        r = Fraction(y - a0 * y1 - b0 * y2, x2 // gcd * y1 - x1 // gcd * y2)
+        return 3 * (a0 + r.numerator * x2 // gcd) + b0 - r.numerator * x1 // gcd if r.denominator == 1 else 0
+
+    part1 = sum(cheapest(dx1, dx2, x, dy1, dy2, y) for dx1, dy1, dx2, dy2, x, y in data)
+    part2 = sum(cheapest(dx1, dx2, x + 10000000000000, dy1, dy2, y + 10000000000000) for dx1, dy1, dx2, dy2, x, y in data)
+
+    return part1, part2
 
 def day12(filename: str):
     world = {(int(r), int(c)) : ch for r, line in enumerate(open(filename)) for c, ch in enumerate(line.strip())}
