@@ -29,6 +29,49 @@ def extended_gcd(a, b):
 
     return gcd, x, y
 
+def solve(a: int, b: int, m: int) -> int:
+    # solve a * x = b (mod m)
+    g, x1, x2 = extended_gcd(a, m)
+    return x1 * b
+
+def day14(filename: str):
+    data = [[int(n) for n in re.findall(r"-?\d+", line)] for line in open(filename)]
+    bots = [((x, y), (dx, dy)) for x, y, dx, dy in data]
+
+    def draw(bots, width , height, t):
+        counts = Counter(pos_at(width, height, x, y, dx, dy, t) for (x, y), (dx, dy) in bots)
+        for y in range(height):
+            for x in range(width):
+                print(f"{counts.get((x, y), '.')}", end="")
+            print()
+
+    def pos_at(width, height, x: int, y: int, dx: int, dy: int, t: int):
+        return (x + t * dx) % width, (y + t * dy) % height
+
+    def quadrant(width, height, x: int, y: int) -> int:
+        qx = 2 * x // width if x != width // 2 else None
+        qy = 2 * y // height if y != height // 2 else None
+        return qy * 2 + qx if qx is not None and qy is not None else None
+
+    def when_neighbours(pos1, vel1, pos2, vel2):
+        th = solve((vel1[0] - vel2[0]) % 101, (pos2[0] - pos1[0] - 1) % 101, 101) % 101 # t = th + k * 101
+        k = solve((101 * (vel1[1] - vel2[1])) % 103, (pos2[1] - pos1[1] + th * (vel2[1] - vel1[1])) % 103, 103)
+        return (th + k * 101) % (101 * 103)
+
+    scores = Counter(quadrant(101, 103, *pos_at(101, 103, x, y, dx, dy, 100)) for (x, y), (dx, dy) in bots)
+    part1 = reduce(operator.mul, (val for key, val in scores.items() if key is not None))
+
+    scores = Counter()
+    # for each pair of bots, find out at which time they're each other's horizontal neighbors
+    for pos1, v1, pos2, v2 in permutations(bots, 2):
+        scores[when_neighbours(pos1, v1, pos2, v2)] += 1
+
+    part2, _ = scores.most_common(1)[0]
+    # draw(bots, 101, 103, part2)
+
+    return part1, part2
+
+
 def day13(filename: str):
     data = [[int(nr) for nr in re.findall(r"\d+", block)] for block in open(filename).read().split("\n\n")]
 
