@@ -61,10 +61,8 @@ def day14(filename: str):
     scores = Counter(quadrant(101, 103, *pos_at(101, 103, x, y, dx, dy, 100)) for (x, y), (dx, dy) in bots)
     part1 = reduce(operator.mul, (val for key, val in scores.items() if key is not None))
 
-    scores = Counter()
     # for each pair of bots, find out at which time they're each other's horizontal neighbors
-    for pos1, v1, pos2, v2 in permutations(bots, 2):
-        scores[when_neighbours(pos1, v1, pos2, v2)] += 1
+    scores = Counter(when_neighbours(*bot1, *bot2) for bot1, bot2 in permutations(bots, 2))
 
     part2, _ = scores.most_common(1)[0]
     # draw(bots, 101, 103, part2)
